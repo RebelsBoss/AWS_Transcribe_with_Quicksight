@@ -1,101 +1,105 @@
-# AWS Transcribe with QuickSight
+# AWS Transcribe з QuickSight
 
-## Project Overview
-This repository contains the infrastructure and code for an automated audio processing pipeline that transcribes audio files, generates summaries, and visualizes the results using AWS QuickSight.
+## Огляд проєкту
+Цей репозиторій містить інфраструктуру та код для автоматизованого конвеєра обробки аудіо, який транскрибує аудіофайли, генерує резюме та візуалізує результати за допомогою AWS QuickSight.
 
-The solution leverages several AWS services to create a serverless architecture for processing audio files at scale:
-- Amazon S3 for storage
-- AWS Lambda for serverless computing
-- Amazon Transcribe for speech-to-text conversion
-- AWS SQS for message queuing
-- Amazon QuickSight for data visualization and analytics
+Рішення використовує кілька сервісів AWS для створення безсерверної архітектури обробки аудіофайлів:
+- Amazon S3 для зберігання
+- AWS Lambda для безсерверних обчислень
+- Amazon Transcribe для перетворення мовлення в текст
+- AWS SQS для черги повідомлень
+- Amazon QuickSight для візуалізації та аналітики даних
 
-## Architecture
+## Архітектура
 
-The system follows this workflow:
+Система працює за наступним алгоритмом:
 
-1. Audio files are uploaded to a designated S3 bucket
-2. The upload event triggers an SQS message
-3. An AWS Lambda function consumes the message and initiates an Amazon Transcribe job
-4. Transcribe processes the audio and stores the result in an output S3 bucket
-5. A second Lambda function is triggered when the transcription is complete
-6. This function processes the transcription, creates a summary, and extracts key insights
-7. The processed data is stored in a final S3 bucket
-8. Amazon QuickSight connects to this bucket to visualize the data and provide analytics
+1. Аудіофайли завантажуються до визначеного S3 бакету
+2. Подія завантаження створює повідомлення в SQS
+3. Lambda функція опрацьовує повідомлення та ініціює завдання Transcribe
+4. Transcribe обробляє аудіо та зберігає результат у вихідному S3 бакеті
+5. Друга Lambda функція запускається після завершення транскрипції
+6. Ця функція обробляє транскрипцію, створює резюме та витягує ключові insights
+7. Оброблені дані зберігаються у фінальному S3 бакеті
+8. Amazon QuickSight підключається до цього бакету для візуалізації та аналітики даних
 
-## Prerequisites
+## Передумови
 
-- AWS Account with appropriate permissions
-- AWS CLI configured
-- Knowledge of AWS services (S3, Lambda, SQS, Transcribe, QuickSight)
+- Обліковий запис AWS з відповідними дозволами
+- Налаштований AWS CLI
+- Знання сервісів AWS (S3, Lambda, SQS, Transcribe, QuickSight)
 
-## Setup Instructions
+## Інструкції з налаштування
 
-### 1. S3 Buckets Setup
+### 1. Налаштування S3 бакетів
 
-Create three S3 buckets:
+Створіть три S3 бакети:
 ```bash
-# Input bucket for audio files
+# Вхідний бакет для аудіофайлів
 aws s3 mb s3://input-audio-bucket
 
-# Transcription output bucket
+# Бакет для виведення транскрипцій
 aws s3 mb s3://transcription-output-bucket
 
-# Processed data bucket for QuickSight
+# Бакет оброблених даних для QuickSight
 aws s3 mb s3://processed-data-bucket
 ```
 
-### 2. SQS Queue Setup
+### 2. Налаштування черги SQS
 
-Create an SQS queue to handle the audio processing jobs:
+Створіть чергу SQS для обробки аудіозавдань:
 ```bash
 aws sqs create-queue --queue-name audio-processing-queue
 ```
 
-### 3. Lambda Functions
+### 3. Lambda функції
 
-Deploy two Lambda functions:
+Розгорніть дві Lambda функції:
 
-#### Transcription Lambda
-This function is triggered by SQS messages and starts Transcribe jobs.
+#### Lambda для транскрипції
+Ця функція запускається повідомленнями SQS та ініціює завдання Transcribe.
 
-#### Summary Lambda
-This function processes the transcription results and generates summaries.
+#### Lambda для резюмування
+Ця функція обробляє результати транскрипції та генерує резюме.
 
-### 4. S3 Event Notifications
+### 4. Сповіщення подій S3
 
-Configure event notifications to trigger the workflow:
-- Set up the input bucket to send notifications to SQS when files are uploaded
-- Set up the transcription output bucket to trigger the summary Lambda function
+Налаштуйте сповіщення про події:
+- Налаштуйте вхідний бакет на надсилання сповіщень до SQS при завантаженні файлів
+- Налаштуйте бакет виведення транскрипцій на запуск Lambda функції резюмування
 
-### 5. QuickSight Setup
+### 5. Налаштування QuickSight
 
-- Set up a QuickSight account if you don't have one
-- Create a new dataset pointing to the processed data bucket
-- Design dashboards and visualizations to analyze the transcription data
+- Створіть обліковий запис QuickSight, якщо його немає
+- Створіть новий набір даних, що вказує на бакет оброблених даних
+- Розробіть панелі та візуалізації для аналізу даних транскрипції
 
-## Usage
+## Використання
 
-1. Upload audio files to the input bucket:
+1. Завантажте аудіофайли до вхідного бакету:
 ```bash
 aws s3 cp your-audio-file.mp3 s3://input-audio-bucket/
 ```
 
-2. The system automatically processes the file through the entire pipeline
+2. Система автоматично обробляє файл через увесь конвеєр
 
-3. Access QuickSight to view visualizations and analytics of the processed data
+3. Отримайте доступ до QuickSight для перегляду візуалізацій та аналітики оброблених даних
 
-## Customization
+## Кастомізація
 
-The solution can be customized in several ways:
-- Modify the summary generation logic in the Lambda function
-- Adjust the QuickSight visualizations based on your specific needs
-- Add additional processing steps or analytics as required
+Рішення можна налаштувати кількома способами:
+- Змінити логіку генерації резюме в Lambda функції
+- Налаштувати візуалізації QuickSight відповідно до ваших потреб
+- Додати додаткові кроки обробки або аналітики
 
-## Troubleshooting
+## Усунення несправностей
 
-Common issues and solutions:
-- Check CloudWatch Logs for Lambda function errors
-- Verify IAM permissions for all components
-- Ensure S3 bucket notifications are properly configured
-- Check SQS queue for unprocessed messages
+Поширені проблеми та рішення:
+- Перевірте журнали CloudWatch на наявність помилок Lambda функцій
+- Перевірте дозволи IAM для всіх компонентів
+- Переконайтеся, що сповіщення бакетів S3 налаштовані правильно
+- Перевірте чергу SQS на наявність необроблених повідомлень
+
+## Ліцензія
+
+[Додайте інформацію про вашу ліцензію тут]
