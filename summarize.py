@@ -6,6 +6,8 @@ import csv
 import re 
 
 AWS_REGION = "your-region"
+cleaned_output_bucket = "your-audio-output-bucket"
+analysis_output_bucket = "your-result-output-bucket"
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -242,16 +244,13 @@ def write_metrics_to_csv(metrics_dict, input_json_path):
 def lambda_handler(event, context):
     s3 = boto3.client("s3")
 
-    cleaned_output_bucket = "your-audio-output-bucket"
-    analysis_output_bucket = "your-result-output-bucket"
-
     try:
         record = event["Records"][0]
         source_bucket = record["s3"]["bucket"]["name"]
         object_key = record["s3"]["object"]["key"]
     except KeyError as e:
         logger.error(f"[ERROR] Error reading event data: {e}")
-        return {"statusCode": 400, "body": “Incorrect event structure”}
+        return {"statusCode": 400, "body": "Incorrect event structure"}
 
     local_input_file = f"/tmp/{os.path.basename(object_key)}"
     try:
