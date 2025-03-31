@@ -18,15 +18,13 @@ Parameters:
     Default: finished-result-of-audio-123456789-987654321
 
 Resources:
-  # SQS Queue
   SQSQueue:
     Type: AWS::SQS::Queue
     Properties:
       QueueName: sqs-to-lambda
-      MessageRetentionPeriod: 345600  # 4 дні
+      MessageRetentionPeriod: 345600
       VisibilityTimeout: 120
 
-  # IAM Role для Lambda, що запускає транскрибацію
   DataToTranscribeRole:
     Type: AWS::IAM::Role
     Properties:
@@ -42,7 +40,6 @@ Resources:
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
-              # Дозволи на логи
               - Effect: Allow
                 Action:
                   - logs:CreateLogGroup
@@ -50,31 +47,26 @@ Resources:
                   - logs:PutLogEvents
                 Resource: arn:aws:logs:*:*:*
 
-              # Дозволи на читання вхідних файлів із S3
               - Effect: Allow
                 Action:
                   - s3:GetObject
                 Resource: !Sub 'arn:aws:s3:::${InputAudioBucketName}/*'
 
-              # Дозволи на запуск Transcribe
               - Effect: Allow
                 Action:
                   - transcribe:StartTranscriptionJob
                 Resource: '*'
 
-              # Дозволи на запис результатів Transcribe у S3
               - Effect: Allow
                 Action:
                   - s3:PutObject
                 Resource: !Sub 'arn:aws:s3:::${TranscribeOutputBucketName}/*'
 
-              # Дозволи на роботу із SQS (необхідні для EventSourceMapping)
               - Effect: Allow
                 Action: 
                   - sqs:*
                 Resource: '*'
 
-  # IAM Role для Lambda, що обробляє транскрипцію (сумаризація)
   TranscribeToBedrockRole:
     Type: AWS::IAM::Role
     Properties:
@@ -109,7 +101,6 @@ Resources:
                   - s3:*
                 Resource: !Sub 'arn:aws:s3:::${SummaryOutputBucketName}/*'
 
-  # Lambda для запуску транскрибації
   DataToTranscribeLambda:
     Type: AWS::Lambda::Function
     Properties:
@@ -118,12 +109,11 @@ Resources:
       Handler: lambda_function.lambda_handler
       Role: !GetAtt DataToTranscribeRole.Arn
       Code:
-        S3Bucket: transcribe-test-bucket-wise
+        S3Bucket: bucket-for-lambda-code-123456789-987654321
         S3Key: transcribe.zip
       Timeout: 60
       MemorySize: 128
 
-  # Lambda для обробки транскрипції (сумаризація)
   TranscribeToBedrockLambda:
     Type: AWS::Lambda::Function
     Properties:
@@ -132,12 +122,11 @@ Resources:
       Handler: lambda_function.lambda_handler
       Role: !GetAtt TranscribeToBedrockRole.Arn
       Code:
-        S3Bucket: transcribe-test-bucket-wise
+        S3Bucket: bucket-for-lambda-code-123456789-987654321
         S3Key: summarize.zip
       Timeout: 300
       MemorySize: 128
 
-  # S3-бакет для вхідних аудіофайлів (inline notification -> SQS)
   InputAudioBucket:
     Type: AWS::S3::Bucket
     Properties:
@@ -152,7 +141,6 @@ Resources:
           - Event: s3:ObjectCreated:*
             Queue: !GetAtt SQSQueue.Arn
 
-  # S3-бакет для виводу транскрипцій (inline notification -> Lambda)
   TranscribeOutputBucket:
     Type: AWS::S3::Bucket
     DependsOn: TranscribeToBedrockLambdaPermission
@@ -163,13 +151,11 @@ Resources:
           - Event: s3:ObjectCreated:*
             Function: !GetAtt TranscribeToBedrockLambda.Arn
 
-  # S3-бакет для фінальних результатів
   SummaryOutputBucket:
     Type: AWS::S3::Bucket
     Properties:
       BucketName: !Ref SummaryOutputBucketName
 
-  # Мапінг подій SQS -> Lambda
   SQSEventSourceMapping:
     Type: AWS::Lambda::EventSourceMapping
     Properties:
@@ -178,7 +164,6 @@ Resources:
       EventSourceArn: !GetAtt SQSQueue.Arn
       FunctionName: !GetAtt DataToTranscribeLambda.Arn
 
-  # Дозвіл на виклик Lambda через SQS
   DataToTranscribeLambdaPermission:
     Type: AWS::Lambda::Permission
     Properties:
@@ -187,7 +172,6 @@ Resources:
       Principal: sqs.amazonaws.com
       SourceArn: !GetAtt SQSQueue.Arn
 
-  # Політика для дозволу S3 надсилати повідомлення у SQS
   SQSQueuePolicy:
     Type: AWS::SQS::QueuePolicy
     Properties:
@@ -205,7 +189,6 @@ Resources:
               ArnEquals:
                 aws:SourceArn: !Sub 'arn:aws:s3:::${InputAudioBucketName}'
 
-  # Дозвіл на виклик Lambda (TranscribeToBedrockLambda) через S3
   TranscribeToBedrockLambdaPermission:
     Type: AWS::Lambda::Permission
     Properties:
