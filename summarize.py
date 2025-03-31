@@ -6,8 +6,8 @@ import csv
 import re 
 
 AWS_REGION = "your-region"
-cleaned_output_bucket = "your-audio-output-bucket"
-analysis_output_bucket = "your-result-output-bucket"
+cleaned_output_bucket = "transcribe-output-123456789-987654321"
+analysis_output_bucket = "finished-result-of-audio-123456789-987654321"
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
