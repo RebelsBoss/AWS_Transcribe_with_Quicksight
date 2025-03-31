@@ -6,7 +6,7 @@ from datetime import datetime
 s3_client = boto3.client('s3')
 transcribe_client = boto3.client('transcribe')
 
-OUTPUT_BUCKET = 'your-output-bucket'
+OUTPUT_BUCKET = 'transcribe-output-123456789-987654321'
 
 def lambda_handler(event, context):
     try:
