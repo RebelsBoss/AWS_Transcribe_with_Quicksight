@@ -1,102 +1,90 @@
-# AWS Transcribe з QuickSight
+# AWS Transcribe with QuickSight
+### 1. Setting up S3 buckets
 
-## Огляд проєкту
-Інфраструктура та код для автоматизованого конвеєра обробки аудіо, код який надсилає та транскрибує аудіофайли за допомогою Amazon Transcribe, після чого транскрибований файл за допомогою AWS Bedrock генерує резюме та візуалізує результати за допомогою AWS QuickSight.
 
-Рішення використовує кілька сервісів AWS безсерверної архітектури обробки аудіофайлів:
-- Amazon S3 для зберігання
-- AWS Lambda для безсерверних обчислень
-- Amazon Transcribe для перетворення мовлення в текст
-- AWS SQS для черги повідомлень
-- AWS Bedrock для сумаризації тексту з Amazon Transcribe
-- Amazon QuickSight для візуалізації та аналітики даних
-
-## Архітектура
-
-Система працює за наступним алгоритмом:
-
-1. Аудіофайли завантажуються до визначеного S3 бакету
-2. Подія завантаження створює повідомлення в SQS
-3. Lambda функція опрацьовує повідомлення та ініціює завдання Transcribe
-4. Transcribe обробляє аудіо та зберігає результат у вихідному S3 бакеті
-5. Друга Lambda функція запускається після завершення транскрипції
-6. Ця функція обробляє транскрипцію за допомогою AWS Bedrock, створює резюме та витягує ключові insights
-7. Оброблені дані зберігаються у фінальному S3 бакеті
-8. Amazon QuickSight підключається до цього бакету для візуалізації та аналітики даних
-
-## Передумови
-
-- Обліковий запис AWS з відповідними дозволами
-- Налаштований AWS CLI
-- Знання сервісів AWS (S3, Lambda, SQS, Transcribe, QuickSight)
-
-## Інструкції з налаштування
-
-### 1. Налаштування S3 бакетів
-
-Створіть три S3 бакети:
-```bash
-# Вхідний бакет для аудіофайлів
+Create three S3 buckets:
+# bash
+# Input bucket for audio files
 aws s3 mb s3://"your-bucket-name"
 
-# Бакет для виведення транскрипцій
+
+# Bucket for transcription output
 aws s3 mb s3://"your-bucket-name"
 
-# Бакет оброблених даних для QuickSight
+
+# Bucket of processed data for QuickSight
 aws s3 mb s3://"your-bucket-name"
 ```
 
-### 2. Налаштування черги SQS
 
-Створіть чергу SQS для обробки аудіозавдань:
+### 2. Set up an SQS queue
+
+
+Create an SQS queue to process audio tasks:
 ```bash
-aws sqs create-queue --queue-name audio-processing-queue
+aws sqs create-queue-- queue-name audio-processing-queue
 ```
 
-### 3. Lambda функції
 
-Розгорніть дві Lambda функції:
+### 3. Lambda functions
 
-#### Lambda для транскрипції
-Ця функція запускається повідомленнями SQS та ініціює завдання Transcribe.
 
-#### Lambda для резюмування
-Ця функція обробляє результати транскрипції та генерує резюме.
+Expand two Lambda functions:
 
-### 4. Сповіщення подій S3
 
-Налаштуйте сповіщення про події:
-- Налаштуйте вхідний бакет на надсилання сповіщень до SQS при завантаженні файлів
-- Налаштуйте бакет виведення транскрипцій на запуск Lambda функції резюмування
+#### Lambda for transcribe
+This function is triggered by SQS messages and initiates the Transcribe task.
 
-### 5. Налаштування QuickSight
 
-- Створіть обліковий запис QuickSight, якщо його немає
-- Створіть новий набір даних, що вказує на бакет оброблених даних
-- Розробіть панелі та візуалізації для аналізу даних транскрипції
+#### Lambda for summarization
+This function processes the transcription results and generates a summary.
 
-## Використання
 
-1. Завантажте аудіофайли до вхідного бакету:
+### 4. S3 event notifications
+
+
+Configure event notifications:
+- Configure the input batch to send notifications to SQS when files are uploaded
+- Configure the transcription output batch to run the Lambda summarization function
+
+
+### 5. Set up QuickSight
+
+
+- Create a QuickSight account if you don't have one
+- Create a new dataset pointing to the processed data bucket
+- Develop dashboards and visualizations to analyze transcription data
+
+
+## Usage
+
+
+1. Upload audio files to the input batch:
 ```bash
 aws s3 cp "your-audio-file.mp3" s3://"your-bucket-name"/
 ```
 
-2. Система автоматично обробляє файл через увесь конвеєр
 
-3. Отримайте доступ до QuickSight для перегляду візуалізацій та аналітики оброблених даних
+2. The system automatically processes the file through the entire conveyor
 
-## Кастомізація
 
-Рішення можна налаштувати кількома способами:
-- Змінити логіку генерації резюме в Lambda функції
-- Налаштувати візуалізації QuickSight відповідно до ваших потреб
-- Додати додаткові кроки обробки або аналітики
+3. Access QuickSight to view visualizations and analytics of the processed data
 
-## Усунення несправностей
 
-Поширені проблеми та рішення:
-- Перевірте журнали CloudWatch на наявність помилок Lambda функцій
-- Перевірте дозволи IAM для всіх компонентів
-- Переконайтеся, що сповіщення бакетів S3 налаштовані правильно
-- Перевірте чергу SQS на наявність необроблених повідомлень
+## Customization
+
+
+The solution can be customized in several ways:
+- Change the summary generation logic in the Lambda function
+- Customize QuickSight visualizations to meet your needs
+- Add additional processing or analytics steps
+
+
+## Troubleshooting
+
+
+Common problems and solutions:
+- Check CloudWatch logs for Lambda function errors
+- Check IAM permissions for all components
+- Make sure S3 bucket notifications are configured correctly
+- Check the SQS queue for unprocessed messages
